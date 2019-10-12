@@ -15,6 +15,7 @@ train_labels = data[1]
 corpus = preprocess(train_set)
 
 vectorizer = CountVectorizer()
+#vectorizer = TfidfVectorizer()
 
 X = vectorizer.fit_transform(corpus)
 y = np.array(train_labels)

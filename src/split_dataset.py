@@ -1,5 +1,5 @@
 import random
-from operator import itemgetter
+import numpy as np
 
 def split_dataset(data, N, random_seed=1000):
     """
@@ -7,7 +7,7 @@ def split_dataset(data, N, random_seed=1000):
     splits the dataset into training set and validation set.
 
     Parameters:
-        data:   tuple = (N, M) where    N = samples
+        data:  tuple = (N, M) where     N = samples
                                         M = features
         N:  number of samples to use for model training
         random_seed:  value of the random seed for the random number generator
@@ -22,9 +22,11 @@ def split_dataset(data, N, random_seed=1000):
     train_inds = inds[:N]
     valid_inds = inds[N:]
 
-    train_set = itemgetter(*train_inds)(data[0])
-    valid_set = itemgetter(*valid_inds)(data[0])
-    train_labels = itemgetter(*train_inds)(data[1])
-    valid_labels = itemgetter(*valid_inds)(data[1])
+    data = np.array(data)
+
+    train_set = data[0][train_inds]
+    train_labels = data[1][train_inds]
+    valid_set = data[0][valid_inds]
+    valid_labels = data[1][valid_inds]
 
     return (train_set, train_labels, valid_set, valid_labels)

@@ -2,14 +2,116 @@ import numpy as np
 import scipy.sparse as sp
 from preprocess import preprocess
 
+from itertools import chain
+from collections import Counter
+
+class TfidfVectorizer():
+    def __init__(self):
+        pass
+
+    def _get_vocabulary(self, corpus):
+        words = []
+        for doc in corpus:
+            for word in doc.split(" "):
+                words.append(word)
+
+        vocabulary = list(set(words))
+        word_dict = {value: i for i, value in enumerate(vocabulary)}
+
+        return word_dict, len(vocabulary)
+
+    def count_word_appearance(self, corpus):
+        return dict(Counter(chain.from_iterable(set(doc.split(" ")) for doc in corpus)))
+
+    def _tf(self, corpus):
+        # tf = raw count of term in document / number of words in document
+        
+        bag_vector = np.zeros(self.n_vocab, dtype=np.float64)
+
+        doc = corpus.split(" ")
+        for word in doc:
+            bag_vector[self.word_dict[word]] += 1
+
+        bag_vector /= len(doc)
+        return bag_vector
+        
+    """
+    def _tf_augmented_frequency(self, doc):
+        # augmented frequency = raw count of term in document / max (raw frequency of most occuring term in document)
+
+        return doc / len(np.max(doc))
+    """
+    
+    def _idf_smooth(self, corpus):
+        # idf = total number of docs / 1 + number of documents containing the term
+
+        bag_vector = np.zeros(self.n_vocab, dtype=np.float64)
+
+        for word, count in self.count_word_appearance(corpus).items():
+            bag_vector[self.word_dict[word]] += count
+
+        bag_vector = np.log(corpus.shape[0] / (bag_vector + 1))
+        return bag_vector
+    
+    def fit_transform(self, corpus):
+        self.word_dict, self.n_vocab = self._get_vocabulary(corpus)
+
+        c_matrix = sp.csr_matrix(([], ([], [])), shape=(0, self.n_vocab))
+
+        idf_vec = self._idf_smooth(corpus)
+        for doc in corpus:
+            tf_vec = self._tf(doc)    
+            tfidf_vec = tf_vec * idf_vec
+            c_matrix = sp.vstack((c_matrix, sp.csr_matrix(tfidf_vec)))
+        return c_matrix
+
+
+    def _tf_oov(self, corpus):
+        bag_vector = np.zeros(self.n_vocab, dtype=np.float64)
+
+        doc = corpus.split(" ")
+        for word in doc:
+            if word not in self.word_dict:
+                continue
+            bag_vector[self.word_dict[word]] += 1
+
+        bag_vector /= len(doc)
+        return bag_vector
+
+    def _idf_smooth_oov(self, corpus):
+        # idf = total number of docs / 1 + number of documents containing the term
+
+        bag_vector = np.zeros(self.n_vocab, dtype=np.float64)
+
+        for word, count in self.count_word_appearance(corpus).items():
+            if word not in self.word_dict:
+                continue
+            bag_vector[self.word_dict[word]] += count
+
+        bag_vector = np.log(corpus.shape[0] / (bag_vector + 1))
+        return bag_vector
+ 
+    def transform(self, corpus):
+        corpus = preprocess(corpus)
+
+        c_matrix = sp.csr_matrix(([], ([], [])), shape=(0, self.n_vocab))
+
+        idf_vec = self._idf_smooth_oov(corpus)
+        for doc in corpus:
+            tf_vec = self._tf_oov(doc)    
+            tfidf_vec = tf_vec * idf_vec
+            c_matrix = sp.vstack((c_matrix, sp.csr_matrix(tfidf_vec)))
+        return c_matrix
+
+
 class CountVectorizer():
     def __init__(self):
         pass
 
-    def _get_vocabulary(self, doc):
+    def _get_vocabulary(self, corpus):
         words = []
-        for sentence in doc:
-            for word in sentence.split(" "):
+        for doc in corpus:
+            for word in doc.split(" "):
                 words.append(word)
         
         vocabulary = list(set(words))
@@ -19,46 +121,47 @@ class CountVectorizer():
 
         return word_dict, len(vocabulary)
 
-    def fit_transform(self, doc):
+    def fit_transform(self, corpus):
         """
-        This method transforms the document into a matrix representation
-        using word count as scores and creates the vocabulary of the document.
+        This method transforms the corpus into a matrix representation
+        using word count as scores and creates the vocabulary of the corpus.
 
         Parameter:
-            doc:  list = (N, ) where   N = number of samples
+            corpus: shape = (N, ) where   N = number of samples
+                    type = np.array
         Returns c_matrix (scipy.sparse.csr.csr_matrix)
-            shape (N, M) where      N = number of samples
+                shape (N, M) where  N = number of samples
                                     M = number of features
         """
-        self.word_dict, self.n_vocab = self._get_vocabulary(doc)
+        self.word_dict, self.n_vocab = self._get_vocabulary(corpus)
        
         c_matrix = sp.csr_matrix(([], ([], [])), shape=(0, self.n_vocab))
 
-        for sentence in doc:
+        for doc in corpus:
             bag_vector = np.zeros(self.n_vocab, dtype=np.int64)
-            for word in sentence.split(" "):
+            for word in doc.split(" "):
                 bag_vector[self.word_dict[word]] += 1
             c_matrix = sp.vstack((c_matrix, sp.csr_matrix(bag_vector)))
         return c_matrix
       
-    def transform(self, doc):
+    def transform(self, corpus):
         """
-        This method transforms the document into a matrix representation
+        This method transforms the corpus into a matrix representation
         using word count as scores. Out of vocabulary words aren't taken
         in account.
         
         Parameter:
-            doc:    shape = (N, ) where   N = number of samples
+            corpus: shape = (N, ) where   N = number of samples
                     type = np.array
-        Returns c_matrix (scipy.sparse.csr.csr_matrix) of shape doc
+        Returns c_matrix (scipy.sparse.csr.csr_matrix) of shape corpus
         """
-        doc = preprocess(doc)
+        corpus = preprocess(corpus)
 
         c_matrix = sp.csr_matrix(([], ([], [])), shape=(0, self.n_vocab))
         
-        for sentence in doc:
+        for doc in corpus:
             bag_vector = np.zeros(self.n_vocab, dtype=np.int64)
-            for word in sentence.split(" "):
+            for word in doc.split(" "):
                 if word not in self.word_dict:
                     continue
                 bag_vector[self.word_dict[word]] += 1

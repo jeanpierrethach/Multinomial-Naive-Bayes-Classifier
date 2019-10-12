@@ -48,6 +48,9 @@ class MultinomialNaiveBayes():
                 shape = (N, )
                 type = np.array
         """
+        if self.verbose:
+            print("Predictions ongoing...")
+
         c_matrix = sp.csr_matrix(([], ([], [])), shape=(0, X.shape[0]))
 
         for c_idx, c_likelihood in enumerate(self.likelihood):

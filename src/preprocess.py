@@ -1,4 +1,5 @@
 import re
+import numpy as np
 from utils import load_nltk_stopwords
 
 def preprocess(X):
@@ -9,6 +10,7 @@ def preprocess(X):
         X:  Dataset
             tuple = (N, ) where     N = samples
     Returns the corpus of documents preprocessed
+            type = np.array
     """
     corpus = []
     nltk_stopwords = load_nltk_stopwords()
@@ -25,4 +27,4 @@ def preprocess(X):
         final_words = " ".join(words_list)
         corpus.append(final_words)
 
-    return corpus
+    return np.array(corpus)
