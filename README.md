@@ -8,6 +8,7 @@ Authors: Jean-Pierre Thach, Artem Ploujnikov. *- University of Montreal*
 
 ## Setup
 #### Dependencies:
+* python 3.6+
 * numpy
 * scipy
 
