@@ -24,8 +24,6 @@ class TfidfVectorizer():
         return dict(Counter(chain.from_iterable(set(doc.split(" ")) for doc in corpus)))
 
     def _tf(self, corpus):
-        # tf = raw count of term in document / number of words in document
-        
         bag_vector = np.zeros(self.n_vocab, dtype=np.float64)
 
         doc = corpus.split(" ")
@@ -34,17 +32,27 @@ class TfidfVectorizer():
 
         bag_vector /= len(doc)
         return bag_vector
-        
-    """
-    def _tf_augmented_frequency(self, doc):
-        # augmented frequency = raw count of term in document / max (raw frequency of most occuring term in document)
 
-        return doc / len(np.max(doc))
-    """
+    def _tf_raw_count(self, corpus):
+        bag_vector = np.zeros(self.n_vocab, dtype=np.float64)
+
+        doc = corpus.split(" ")
+        for word in doc:
+            bag_vector[self.word_dict[word]] += 1
+
+        return bag_vector
+
+    def _tf_log_normalization(self, corpus):
+        bag_vector = np.zeros(self.n_vocab, dtype=np.float64)
+
+        doc = corpus.split(" ")
+        for word in doc:
+            bag_vector[self.word_dict[word]] += 1
+
+        bag_vector = np.log(bag_vector + 1)
+        return bag_vector
     
     def _idf_smooth(self, corpus):
-        # idf = total number of docs / 1 + number of documents containing the term
-
         bag_vector = np.zeros(self.n_vocab, dtype=np.float64)
 
         for word, count in self.count_word_appearance(corpus).items():
@@ -78,9 +86,30 @@ class TfidfVectorizer():
         bag_vector /= len(doc)
         return bag_vector
 
-    def _idf_smooth_oov(self, corpus):
-        # idf = total number of docs / 1 + number of documents containing the term
+    def _tf_raw_count_oov(self, corpus):
+        bag_vector = np.zeros(self.n_vocab, dtype=np.float64)
 
+        doc = corpus.split(" ")
+        for word in doc:
+            if word not in self.word_dict:
+                continue
+            bag_vector[self.word_dict[word]] += 1
+
+        return bag_vector
+
+    def _tf_log_normalization_oov(self, corpus):
+        bag_vector = np.zeros(self.n_vocab, dtype=np.float64)
+
+        doc = corpus.split(" ")
+        for word in doc:
+            if word not in self.word_dict:
+                continue
+            bag_vector[self.word_dict[word]] += 1
+
+        bag_vector = np.log(bag_vector + 1)
+        return bag_vector
+
+    def _idf_smooth_oov(self, corpus):
         bag_vector = np.zeros(self.n_vocab, dtype=np.float64)
 
         for word, count in self.count_word_appearance(corpus).items():

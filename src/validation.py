@@ -19,15 +19,10 @@ X = vectorizer.fit_transform(corpus)
 y = np.array(train_labels)
 
 
-naive = MultinomialNaiveBayes(alpha=0.35, verbose=True)
+naive = MultinomialNaiveBayes(alpha=0.52, verbose=True)
 classifier = naive.fit(X, y)
 
 predict_vec = classifier.predict(vectorizer.transform(np.array(valid_set)))
 
-
-from sklearn.metrics import confusion_matrix
-
-cm = confusion_matrix(list(valid_labels), predict_vec)
-
-accuracy = cm.trace()/cm.sum()
+accuracy = np.mean(valid_labels == predict_vec, axis=0)
 print("Accuracy: ", accuracy)
